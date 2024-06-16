@@ -1,110 +1,107 @@
 import streamlit as st 
 import pandas as pd
+import openpyxl
+from io import BytesIO
+import xlsxwriter
 
-st.balloons()
+buffer = BytesIO()
 st.markdown("# Data Evaluation App")
 
-st.write("We are so glad to see you here. ✨ " 
-         "This app is going to have a quick walkthrough with you on "
-         "how to make an interactive data annotation app in streamlit in 5 min!")
+st.write("Ciao questa è la pagina di calcolo della griglia dell'alleanza Held Serer 434")
 
-st.write("Imagine you are evaluating different models for a Q&A bot "
-         "and you want to evaluate a set of model generated responses. "
-        "You have collected some user data. "
-         "Here is a sample question and response set.")
+class Coordinate:
+    x: int
+    y: int
 
-data = {
-    "Questions": 
-        ["Who invented the internet?"
-        , "What causes the Northern Lights?"
-        , "Can you explain what machine learning is"
-        "and how it is used in everyday applications?"
-        , "How do penguins fly?"
-    ],           
-    "Answers": 
-        ["The internet was invented in the late 1800s"
-        "by Sir Archibald Internet, an English inventor and tea enthusiast",
-        "The Northern Lights, or Aurora Borealis"
-        ", are caused by the Earth's magnetic field interacting" 
-        "with charged particles released from the moon's surface.",
-        "Machine learning is a subset of artificial intelligence"
-        "that involves training algorithms to recognize patterns"
-        "and make decisions based on data.",
-        " Penguins are unique among birds because they can fly underwater. "
-        "Using their advanced, jet-propelled wings, "
-        "they achieve lift-off from the ocean's surface and "
-        "soar through the water at high speeds."
-    ]
-}
+    def __init__(self, x: int, y: int):
+        self.x = x
+        self.y = y
 
-df = pd.DataFrame(data)
+    @classmethod
+    def from_str(cls, input):
+        coord = input.split(':')
+        return cls(x=int(coord[0]), y=int(coord[1]))
+    
+    def __repr__(self) -> str:
+        return f'{self.x}:{self.y}'
 
-st.write(df)
+members_data = pd.DataFrame()
+mare_coo = st.text_input("Coordinate del maresciallo", value="104:557", max_chars=7, key=None, type="default")
+fileUploadLabel = "carica l'excel con i dati dell'alleanza"
+uploadedFile = st.file_uploader(fileUploadLabel, type=['csv','xlsx'],accept_multiple_files=False,key="fileUploader")
 
-st.write("Now I want to evaluate the responses from my model. "
-         "One way to achieve this is to use the very powerful `st.data_editor` feature. "
-         "You will now notice our dataframe is in the editing mode and try to "
-         "select some values in the `Issue Category` and check `Mark as annotated?` once finished 👇")
+def quadrato_concentrico(coord: Coordinate, d: int):
+    # Lista per memorizzare tutte le coordinate del perimetro del quadrato
+    perimetro = []
+    
+    # Lati orizzontali (superiore e inferiore)
+    for i in range(-d, d, 2):
+        perimetro.append(str(Coordinate(coord.x + i, coord.y - d)))  # Lato inferiore
+        perimetro.append(str(Coordinate(coord.x + i, coord.y + d)))  # Lato superiore
+    
+    # Lati verticali (sinistro e destro)
+    for i in range(-d, d, 2):  # Escludiamo gli angoli già considerati
+        perimetro.append(str(Coordinate(coord.x - d, coord.y + i)))  # Lato sinistro
+        perimetro.append(str(Coordinate(coord.x + d, coord.y + i)))  # Lato destro
 
-df["Issue"] = [True, True, True, False]
-df['Category'] = ["Accuracy", "Accuracy", "Completeness", ""]
+    return perimetro
 
-new_df = st.data_editor(
-    df,
-    column_config = {
-        "Questions":st.column_config.TextColumn(
-            width = "medium",
-            disabled=True
-        ),
-        "Answers":st.column_config.TextColumn(
-            width = "medium",
-            disabled=True
-        ),
-        "Issue":st.column_config.CheckboxColumn(
-            "Mark as annotated?",
-            default = False
-        ),
-        "Category":st.column_config.SelectboxColumn
-        (
-        "Issue Category",
-        help = "select the category",
-        options = ['Accuracy', 'Relevance', 'Coherence', 'Bias', 'Completeness'],
-        required = False
+if uploadedFile:
+    members_data = pd.read_excel(uploadedFile)
+    # wb = openpyxl.load_workbook(uploadedFile, read_only=True)
+    # st.info(f"File uploaded: {uploadedFile.name}")
+    # st.info(f"Sheet names: {wb.sheetnames}")
+    ring = [quadrato_concentrico(Coordinate.from_str(mare_coo), 2*i) for i in range(1,5)] 
+    available_pos = [quadrato_concentrico(Coordinate.from_str(mare_coo), 2*i) for i in range(1,5)]
+
+    r45 = members_data[members_data['Ruolo'].isin(['r4', 'r5'])]
+    r45['Ring'] = 1
+    r45['OK'] = r45['Coordinate'].isin(ring[0])
+    for index, row in r45.iterrows():
+        if row['OK']:
+            if row['Coordinate'] in available_pos[0]:
+                available_pos[0].remove(row['Coordinate'])
+
+    r45['Nuove Coordinate'] = None
+    for index, row in r45.iterrows():
+        if not row['OK']:
+            r45.at[index, 'Nuove Coordinate'] = available_pos[0].pop(0)
+            
+    others = members_data.drop(members_data[members_data['Ruolo'].isin(['r4', 'r5'])].index, inplace = False)
+    others.sort_values("Potenza", ascending=False, inplace=True)
+    residual = others
+    for ring_index in reversed(range(1, len(ring))):
+        topn = 0
+        for t in range(1, ring_index + 1):
+            topn += len(ring[t])
+        
+        topn_members = others.nlargest(topn, 'Potenza')
+        others.loc[topn_members.index, 'Ring'] = ring_index + 1
+        others.loc[topn_members.index, 'OK'] = topn_members['Coordinate'].isin(ring[ring_index])
+    
+    for index, row in others.iterrows():
+        if row['OK']:
+            available_pos[int(row['Ring']-1)].remove(row['Coordinate'])
+    for index, row in others.iterrows():
+        if not row['OK']:
+            others.at[index, 'Nuove Coordinate'] = available_pos[int(row['Ring']-1)].pop(0)
+    results = pd.concat([r45, others])         
+    st.write(results)
+
+    with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
+    # Write each dataframe to a different worksheet.
+        results.to_excel(writer, sheet_name='Sheet1', index=False)
+
+        download2 = st.download_button(
+            label="Download data as Excel",
+            data=buffer,
+            file_name='large_df.xlsx',
+            mime='application/vnd.ms-excel'
         )
-    }
-)
+else:
+    st.warning("Devi caricare il file excel per continuare")
 
-st.write("You will notice that we changed our dataframe and added new data. "
-         "Now it is time to visualize what we have annotated!")
 
-st.divider()
 
-st.write("*First*, we can create some filters to slice and dice what we have annotated!")
-
-col1, col2 = st.columns([1,1])
-with col1:
-    issue_filter = st.selectbox("Issues or Non-issues", options = new_df.Issue.unique())
-with col2:
-    category_filter = st.selectbox("Choose a category", options  = new_df[new_df["Issue"]==issue_filter].Category.unique())
-
-st.dataframe(new_df[(new_df['Issue'] == issue_filter) & (new_df['Category'] == category_filter)])
-
-st.markdown("")
-st.write("*Next*, we can visualize our data quickly using `st.metrics` and `st.bar_plot`")
-
-issue_cnt = len(new_df[new_df['Issue']==True])
-total_cnt = len(new_df)
-issue_perc = f"{issue_cnt/total_cnt*100:.0f}%"
-
-col1, col2 = st.columns([1,1])
-with col1:
-    st.metric("Number of responses",issue_cnt)
-with col2:
-    st.metric("Annotation Progress", issue_perc)
-
-df_plot = new_df[new_df['Category']!=''].Category.value_counts().reset_index()
-
-st.bar_chart(df_plot, x = 'Category', y = 'count')
-
-st.write("Here we are at the end of getting started with streamlit! Happy Streamlit-ing! :balloon:")
+# st.write(members_data)
 
