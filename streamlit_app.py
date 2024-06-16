@@ -5,9 +5,9 @@ from io import BytesIO
 import xlsxwriter
 
 buffer = BytesIO()
-st.markdown("# Data Evaluation App")
+st.markdown("# HL5 Grid Composer")
 
-st.write("Ciao questa è la pagina di calcolo della griglia dell'alleanza Held Serer 434")
+st.write("Ciao questa è la pagina di calcolo della griglia dell'alleanza Held Server 434")
 
 class Coordinate:
     x: int
