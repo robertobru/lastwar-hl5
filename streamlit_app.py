@@ -29,18 +29,18 @@ members_data = pd.DataFrame()
 mare_coo = st.text_input("Coordinate del maresciallo", value="104:557", max_chars=7, key=None, type="default")
 fileUploadLabel = "carica l'excel con i dati dell'alleanza"
 uploadedFile = st.file_uploader(fileUploadLabel, type=['csv','xlsx'],accept_multiple_files=False,key="fileUploader")
-
+step_distanza = 3
 def quadrato_concentrico(coord: Coordinate, d: int):
     # Lista per memorizzare tutte le coordinate del perimetro del quadrato
     perimetro = []
     
     # Lati orizzontali (superiore e inferiore)
-    for i in range(-d, d, 2):
+    for i in range(-d, d, step_distanza):
         perimetro.append(str(Coordinate(coord.x + i, coord.y - d)))  # Lato inferiore
         perimetro.append(str(Coordinate(coord.x + i, coord.y + d)))  # Lato superiore
     
     # Lati verticali (sinistro e destro)
-    for i in range(-d, d, 2):  # Escludiamo gli angoli già considerati
+    for i in range(-d, d, step_distanza):  # Escludiamo gli angoli già considerati
         perimetro.append(str(Coordinate(coord.x - d, coord.y + i)))  # Lato sinistro
         perimetro.append(str(Coordinate(coord.x + d, coord.y + i)))  # Lato destro
 
@@ -51,8 +51,8 @@ if uploadedFile:
     # wb = openpyxl.load_workbook(uploadedFile, read_only=True)
     # st.info(f"File uploaded: {uploadedFile.name}")
     # st.info(f"Sheet names: {wb.sheetnames}")
-    ring = [quadrato_concentrico(Coordinate.from_str(mare_coo), 2*i) for i in range(1,5)] 
-    available_pos = [quadrato_concentrico(Coordinate.from_str(mare_coo), 2*i) for i in range(1,5)]
+    ring = [quadrato_concentrico(Coordinate.from_str(mare_coo), step_distanza * i) for i in range(1,6)] 
+    available_pos = [quadrato_concentrico(Coordinate.from_str(mare_coo), step_distanza * i) for i in range(1,6)]
 
     r45 = members_data[members_data['Ruolo'].isin(['r4', 'r5'])]
     r45['Ring'] = 1
@@ -65,7 +65,10 @@ if uploadedFile:
     r45['Nuove Coordinate'] = None
     for index, row in r45.iterrows():
         if not row['OK']:
-            r45.at[index, 'Nuove Coordinate'] = available_pos[0].pop(0)
+            if len(available_pos[0]) > 0:
+                r45.at[index, 'Nuove Coordinate'] = available_pos[0].pop(0)
+            else:
+                r45.at[index, 'Nuove Coordinate'] = available_pos[1].pop(0)
             
     others = members_data.drop(members_data[members_data['Ruolo'].isin(['r4', 'r5'])].index, inplace = False)
     others.sort_values("Potenza", ascending=False, inplace=True)
