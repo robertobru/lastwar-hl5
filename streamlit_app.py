@@ -7,6 +7,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Tuple
 
+coordinates = [
+                                          (4,15),(7,15),(10,15),(13,15),
+                           (-2,13),(1,13),(4,12),(7,12),(10,12),(13,12),(16,12),
+                   (-5,11),(-2,10),(1,10), (4,9), (7,9), (10,9), (13,9), (16,9),
+            (-8,8),(-5,8), (-2,7), (1,7),  (4,6), (7,6), (10,6), (13,6), (16,6),
+
+          (-8, 5), (-5, 5), (-2, 4), (1, 4), (4, 3), (7, 3), (10, 3), (13, 3), (16, 3),
+           (-11, 2), (-8, 2), (-5, 2),                  (4, 0), (7, 0), (10, 0), (13, 0), (16, 0),
+(-14, -1), (-11, -1), (-8, -1), (-5, -1),                               (10, -3), (13, -3), (16, -3),
+(-15, -4), (-12, -4), (-9, -4), (-6, -4), (-3, -4),(0, -4),             (10, -6), (13, -6), (16, -6),
+(-15, -7), (-12, -7), (-9, -7), (-6, -7), (-3, -7),(0, -7),             (10, -9), (13, -9), (16, -9),
+(-15, -10), (-12, -10), (-9, -10), (-6, -10), (-3, -10),(1, -10),(4, -10), (7, -10),
+(-15, -13), (-12, -13), (-9, -13), (-6, -13), (-3, -13),(0, -13),(3, -13), (6, -13), (9, -13), (12, -13), (15, -13),
+            (-12, -16), (-9, -16), (-6, -16), (-3, -16),(0, -16),(3, -16), (6, -16), (9, -16), (12, -16), (15, -16)
+]
+
 
 buffer = BytesIO()
 st.markdown("# HL5 Grid Composer")
@@ -59,7 +75,7 @@ def get_nearest_cells(center: Coordinate, grid_size: int) -> List[Tuple[float, C
     return cells
 
 # Funzione per assegnare le celle agli oggetti
-def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size: int) -> List[Tuple[str, Coordinate]]:
+    """def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size: int) -> List[Tuple[str, Coordinate]]:
     cells = get_nearest_cells(center, grid_size)
     assigned_cells = []
     for index, row in members.iterrows():
@@ -67,7 +83,21 @@ def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size
             _, cell = cells.pop(0)
             assigned_cells.append((row["Nickname"], cell))
             members.at[index, 'Nuove Coordinate'] = "{}".format(cell)
+    return assigned_cells"""
+def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size: int) -> List[Tuple[str, Coordinate]]:
+    cells = []
+    for coo in coordinates:
+        current_cell = Coordinate(coo) + Coordinate(-5 + 5) + center
+        cells.append(current_cell.get_distance_from_coordinate(center), current_cell)
+        cells.sort(key=lambda x: x[0])  # Ordina per distanza dal centro
+    assigned_cells = []
+    for index, row in members.iterrows():
+        if cells:
+            _, cell = cells.pop(0)
+            assigned_cells.append((row["Nickname"], cell))
+            members.at[index, 'Nuove Coordinate'] = "{}".format(cell)
     return assigned_cells
+
 
 def create_grid(df: pd.DataFrame, center: Coordinate):
     fig, ax = plt.subplots(figsize=(grid_size*2 + 1, grid_size*2 + 1))
