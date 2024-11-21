@@ -87,8 +87,9 @@ def get_nearest_cells(center: Coordinate, grid_size: int) -> List[Tuple[float, C
 def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size: int) -> List[Tuple[str, Coordinate]]:
     cells = []
     for coo in coordinates:
-        current_cell = Coordinate(coo) + Coordinate(-5 + 5) + center
-        cells.append(current_cell.get_distance_from_coordinate(center), current_cell)
+        current_cell = Coordinate(x=coo[0] - 5 + center.x, y=coo[1] +5 + center.y) 
+        
+        cells.append((current_cell.get_distance_from_coordinate(center), current_cell))
         cells.sort(key=lambda x: x[0])  # Ordina per distanza dal centro
     assigned_cells = []
     for index, row in members.iterrows():
@@ -100,7 +101,20 @@ def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size
 
 
 def create_grid(df: pd.DataFrame, center: Coordinate):
-    fig, ax = plt.subplots(figsize=(grid_size*2 + 1, grid_size*2 + 1))
+    board_size = 19
+
+    # Creazione della scacchiera
+    fig, ax = plt.subplots()
+    for x in range(center.x - board_size -1, center.x + board_size + 1):
+        ax.axhline(x, color='black', linewidth=0.5)  # Linee orizzontali
+        ax.axvline(x, color='black', linewidth=0.5)  # Linee verticali
+    for index, row in df.iterrows():
+        coord = Coordinate.from_str(row["Nuove Coordinate"])
+        ax.add_patch(plt.Rectangle((coord.y, coord.x), 1, 1, color='red', alpha=0.6))  # Riempi la cella con un colore 
+        ax.text(coord.y + 0.5, coord.x + 0.5, row["Nickname"], color='black', ha='center', va='center', fontsize=4)  
+    return fig
+
+"""    fig, ax = plt.subplots(figsize=(grid_size*2 + 1, grid_size*2 + 1))
     
     ax.set_xlim(center.x - max_offset -.5, center.x + max_offset +.5)
     ax.set_ylim(center.y - max_offset -.5, center.y + max_offset + .5)
@@ -113,6 +127,8 @@ def create_grid(df: pd.DataFrame, center: Coordinate):
         ax.text(coord.x, coord.y, row["Nickname"], fontsize=12, ha='center')
 
     return fig
+"""
+
 
 def quadrato_concentrico(coord: Coordinate, d: int):
     # Lista per memorizzare tutte le coordinate del perimetro del quadrato
