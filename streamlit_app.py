@@ -117,7 +117,7 @@ def create_grid(df: pd.DataFrame, center: Coordinate):
     ax.add_patch(plt.Rectangle((center.x, center.y), 1, 1, color='violet', alpha=0.6))  # Riempi la cella con un colore 
     ax.text(center.x + 0.5, center.y + 0.5, "Marshall", color='black', ha='center', va='center', fontsize=4)  
     ax.add_patch(plt.Rectangle((center.x - 5, center.y + 5), 1, 1, color='orange', alpha=0.6))  # Riempi la cella con un colore 
-    ax.text(center.x - 5.5, center.y + 5.5, "Furnace", color='black', ha='center', va='center', fontsize=4)  
+    ax.text(center.x - 4.5, center.y + 5.5, "Furnace", color='black', ha='center', va='center', fontsize=4)  
     
     return fig
 
