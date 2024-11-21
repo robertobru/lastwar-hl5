@@ -105,29 +105,21 @@ def create_grid(df: pd.DataFrame, center: Coordinate):
 
     # Creazione della scacchiera
     fig, ax = plt.subplots()
-    for x in range(center.x - board_size -1, center.x + board_size + 1):
-        ax.axhline(x, color='black', linewidth=0.5)  # Linee orizzontali
+    for y in range(center.y - board_size +4 , center.y + board_size + 5):
+        ax.axhline(y, color='black', linewidth=0.5)  # Linee orizzontali
+    for x in range(center.x - board_size -3, center.x + board_size -5):
         ax.axvline(x, color='black', linewidth=0.5)  # Linee verticali
     for index, row in df.iterrows():
         coord = Coordinate.from_str(row["Nuove Coordinate"])
-        ax.add_patch(plt.Rectangle((coord.y, coord.x), 1, 1, color='red', alpha=0.6))  # Riempi la cella con un colore 
-        ax.text(coord.y + 0.5, coord.x + 0.5, row["Nickname"], color='black', ha='center', va='center', fontsize=4)  
-    return fig
-
-"""    fig, ax = plt.subplots(figsize=(grid_size*2 + 1, grid_size*2 + 1))
+        ax.add_patch(plt.Rectangle((coord.x, coord.y), 1, 1, color='red', alpha=0.6))  # Riempi la cella con un colore 
+        ax.text(coord.x + 0.5, coord.y + 0.5, row["Nickname"], color='black', ha='center', va='center', fontsize=4)  
     
-    ax.set_xlim(center.x - max_offset -.5, center.x + max_offset +.5)
-    ax.set_ylim(center.y - max_offset -.5, center.y + max_offset + .5)
-    ax.set_xticks(range(center.x - max_offset - 1, center.x + max_offset + 1))
-    ax.set_yticks(range(center.y - max_offset - 1, center.y + max_offset + 1))
-    ax.grid(True)
-
-    for index, row in df.iterrows():
-        coord = Coordinate.from_str(row["Nuove Coordinate"])
-        ax.text(coord.x, coord.y, row["Nickname"], fontsize=12, ha='center')
-
+    ax.add_patch(plt.Rectangle((center.x, center.y), 1, 1, color='violet', alpha=0.6))  # Riempi la cella con un colore 
+    ax.text(center.x + 0.5, center.y + 0.5, "Marshall", color='black', ha='center', va='center', fontsize=4)  
+    ax.add_patch(plt.Rectangle((center.x - 5, center.y + 5), 1, 1, color='orange', alpha=0.6))  # Riempi la cella con un colore 
+    ax.text(center.x - 5.5, center.y + 5.5, "Furnace", color='black', ha='center', va='center', fontsize=4)  
+    
     return fig
-"""
 
 
 def quadrato_concentrico(coord: Coordinate, d: int):
