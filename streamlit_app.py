@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Tuple
 
+lato_fornace = "sinistra"
+
 coordinates = [
                                           (4,15),(7,15),(10,15),(13,15),
                            (-2,13),(1,13),(4,12),(7,12),(10,12),(13,12),(16,12),
@@ -87,7 +89,10 @@ def get_nearest_cells(center: Coordinate, grid_size: int) -> List[Tuple[float, C
 def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size: int) -> List[Tuple[str, Coordinate]]:
     cells = []
     for coo in coordinates:
-        current_cell = Coordinate(x=coo[0] - 5 + center.x, y=coo[1] +5 + center.y) 
+        if "{}".format(lato_fornace) == "sinistra":
+            current_cell = Coordinate(x=coo[0] - 5 + center.x, y=coo[1] +5 + center.y) 
+        else:
+            current_cell = Coordinate(x=coo[0] + 5 + center.x, y=coo[1] +5 + center.y)
         
         cells.append((current_cell.get_distance_from_coordinate(center), current_cell))
         cells.sort(key=lambda x: x[0])  # Ordina per distanza dal centro
@@ -102,12 +107,15 @@ def assign_cells_to_members(members: pd.DataFrame, center: Coordinate, grid_size
 
 def create_grid(df: pd.DataFrame, center: Coordinate):
     board_size = 19
-
+    if "{}".format(lato_fornace) == "sinistra":
+        x_range = (center.x - board_size -5, center.x + board_size -5)
+    else:
+        x_range = (center.x - board_size + 5, center.x + board_size + 5)
     # Creazione della scacchiera
     fig, ax = plt.subplots()
     for y in range(center.y - board_size +4 , center.y + board_size + 5):
         ax.axhline(y, color='black', linewidth=0.5)  # Linee orizzontali
-    for x in range(center.x - board_size -3, center.x + board_size -5):
+    for x in range(*x_range):
         ax.axvline(x, color='black', linewidth=0.5)  # Linee verticali
     for index, row in df.iterrows():
         coord = Coordinate.from_str(row["Nuove Coordinate"])
@@ -115,10 +123,13 @@ def create_grid(df: pd.DataFrame, center: Coordinate):
         ax.text(coord.x + 0.5, coord.y + 0.5, row["Nickname"], color='black', ha='center', va='center', fontsize=4)  
     
     ax.add_patch(plt.Rectangle((center.x, center.y), 1, 1, color='violet', alpha=0.6))  # Riempi la cella con un colore 
-    ax.text(center.x + 0.5, center.y + 0.5, "Marshall", color='black', ha='center', va='center', fontsize=4)  
-    ax.add_patch(plt.Rectangle((center.x - 5, center.y + 5), 1, 1, color='orange', alpha=0.6))  # Riempi la cella con un colore 
-    ax.text(center.x - 4.5, center.y + 5.5, "Furnace", color='black', ha='center', va='center', fontsize=4)  
-    
+    ax.text(center.x + 0.5, center.y + 0.5, "Marshall", color='black', ha='center', va='center', fontsize=4)
+    if "{}".format(lato_fornace) == "sinistra":
+        ax.add_patch(plt.Rectangle((center.x - 5, center.y + 5), 1, 1, color='orange', alpha=0.6))  # Riempi la cella con un colore 
+        ax.text(center.x - 4.5, center.y + 5.5, "Furnace", color='black', ha='center', va='center', fontsize=4)  
+    else:
+        ax.add_patch(plt.Rectangle((center.x + 5, center.y + 5), 1, 1, color='orange', alpha=0.6))  # Riempi la cella con un colore 
+        ax.text(center.x + 5.5, center.y + 5.5, "Furnace", color='black', ha='center', va='center', fontsize=4)  
     return fig
 
 
@@ -140,6 +151,10 @@ def quadrato_concentrico(coord: Coordinate, d: int):
 
 members_data = pd.DataFrame()
 mare_coo = st.text_input("Coordinate del maresciallo", value="104:557", max_chars=7, key=None, type="default")
+lato_fornace = option = st.selectbox(
+    "Lato della fornace",
+    ("sinistra", "destra"),
+)
 fileUploadLabel = "carica l'excel con i dati dell'alleanza"
 uploadedFile = st.file_uploader(fileUploadLabel, type=['csv','xlsx'],accept_multiple_files=False,key="fileUploader")
 step_distanza = 3
@@ -148,6 +163,9 @@ center_coo = Coordinate.from_str(mare_coo)
 
 
 if uploadedFile:
+    if "{}".format(lato_fornace) == "destra":
+        coordinates = [(-item[0], item[1]) for item in coordinates]
+
     members_data = pd.read_excel(uploadedFile)
     # wb = openpyxl.load_workbook(uploadedFile, read_only=True)
     # st.info(f"File uploaded: {uploadedFile.name}")
