@@ -30,7 +30,7 @@ buffer = BytesIO()
 st.markdown("# HL5 Grid Composer")
 
 st.write("Ciao questa è la pagina di calcolo della griglia dell'alleanza Held Server 434")
-categories = ["MUSA", "MAGGIORDOMO", "SIG.GUERRA", "RECRUITER", "R5", "R4", "R3", "R2", "R1"]
+categories = ["MUSA", "MAGGIORDOMO", "SIG.GUERRA", "RECRUITER", "R5", "R4+", "R4", "R3+", "R3", "R2", "R1", "R0"]
 grid_size = 15
 grid_step = 3
 max_offset = grid_size
